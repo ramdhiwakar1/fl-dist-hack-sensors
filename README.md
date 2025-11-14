@@ -146,53 +146,6 @@ sensor-fl/
 
 ---
 
-## 🎯 The Demo Flow
-
-### Act 1: The Problem
-*"We're a pump manufacturer. Our suppliers have quality issues but won't share data."*
-
-### Act 2: The Solution
-*"We use federated learning. Everyone trains locally, only model updates are shared."*
-
-**Start server:**
-```bash
-python server.py --rounds 5 --min-clients 2
-```
-
-**Start dashboard:**
-```bash
-streamlit run dashboard/app.py
-```
-
-### Act 3: Suppliers Join
-*"Watch as suppliers connect and contribute..."*
-
-**Supplier A connects:**
-```bash
-python client.py --client-id 0
-```
-
-**Supplier B connects:**
-```bash
-python client.py --client-id 1
-```
-
-### Act 4: The Compounding Value
-*"Look at the dashboard - loss decreasing, model improving, no data shared!"*
-
-- Show progress bars moving
-- Show loss curves improving
-- Show per-supplier contributions
-- **Emphasize: Data never left their locations**
-
-### Act 5: The Business Impact
-*"Now we have a better anomaly detection model than anyone could build alone."*
-
-- Better predictive maintenance
-- Reduced downtime across supply chain
-- Stronger supplier relationships
-- Competitive advantage maintained
-
 ---
 
 ## 🔧 Technical Details
@@ -247,49 +200,32 @@ After 5 rounds with 2 suppliers:
 
 ---
 
-## 🎓 The Lesson
+## 🎓 Why This Matters
 
-**Traditional ML**: "Give me all your data"
+**Traditional ML**: "Give me all your data"  
 **Federated Learning**: "Keep your data, share the intelligence"
 
-This is the future of:
-- Supply chain collaboration
-- Healthcare (hospitals sharing knowledge)
-- Finance (banks detecting fraud together)
-- Any industry where data is sensitive but collective intelligence is valuable
+This approach enables collaboration in industries where data privacy is critical:
+- Supply chain intelligence
+- Healthcare research
+- Financial fraud detection
+- Any scenario requiring collective learning without data centralization
 
 ---
 
-## 🏆 For the Hackathon
+## 📞 Technical Stack
 
-**Judge Questions You Can Answer:**
-
-Q: *"How does data privacy work?"*
-A: "Data never leaves supplier locations. Only encrypted model parameters travel."
-
-Q: *"What's the business value?"*
-A: "Every supplier gets better anomaly detection than training alone. The manufacturer strengthens supplier relationships while improving their own models."
-
-Q: *"Can this scale?"*
-A: "Yes! Flower is used in production by Fortune 500 companies. We're using the same architecture."
-
-Q: *"What about different networks?"*
-A: "We use ZeroTier for secure cross-network communication. Works anywhere."
-
----
-
-## 📞 Support
-
-Built with:
 - [Flower 1.23.0](https://flower.ai/) - Federated Learning Framework
 - PyTorch 2.9 - Deep Learning
-- Streamlit - Dashboard
-- ZeroTier - Networking
-
-**Live Demo Ready** ✅
-**Production Architecture** ✅
-**Business Story** ✅
+- Streamlit - Real-time Dashboard
+- ZeroTier - Secure Cross-Network Communication
 
 ---
 
-*Building the future of collaborative AI, one supplier at a time.* 🏭🤝🚀
+## 🤝 Contributing
+
+This is a research/demo project showcasing federated learning in supply chain scenarios. Feel free to explore, extend, or adapt for your use case.
+
+---
+
+*Building the future of collaborative AI in manufacturing.* 🏭🚀
