@@ -1,137 +1,137 @@
-# ⚡ Quick Start - 3 Minutes to Running
+# Quick Start
 
-## Prerequisites Check
+## Prerequisites
+- Python 3.8+
+- Virtual environment activated
+- Dependencies installed: `pip install -r requirements-venv.txt`
+
+---
+
+## Setup
+
+### 1. Activate Virtual Environment
 ```bash
-# Check Python version (need 3.8+)
-python --version
+# Windows
+venv\Scripts\activate
 
-# Check you're in project root
-ls pyproject.toml  # Should exist
+# Mac/Linux
+source venv/bin/activate
 ```
 
-## 1️⃣ Setup Virtual Environment (30 seconds)
+---
 
+## Same Network Setup
+
+### Server Instructions
 ```bash
-# Create venv
-python -m venv venv
+python server.py --rounds 5 --min-clients 2
+```
+Wait for: `"Server is starting and waiting for 2 clients..."`
 
-# Activate
-venv\Scripts\activate          # Windows
-# OR
-source venv/bin/activate       # Mac/Linux
+### Client Instructions
+```bash
+# Client 0
+python client.py --client-id 0 --server-address 127.0.0.1:8080
 
-# Install dependencies
-pip install -r requirements-venv.txt
+# Client 1 (new terminal)
+python client.py --client-id 1 --server-address 127.0.0.1:8080
 ```
 
-## 2️⃣ Terminal 1: Start Server (10 seconds)
+### Dashboard (Optional)
+```bash
+streamlit run dashboard/app.py
+```
+Opens at `http://localhost:8501`
 
+---
+
+## Different Networks Setup
+
+### Server Instructions
+1. Find server IP:
+```bash
+# Windows
+ipconfig
+
+# Mac/Linux
+ifconfig
+```
+
+2. Start server:
 ```bash
 python server.py --rounds 5 --min-clients 2
 ```
 
-**Wait for:** `"Server is starting and waiting for 2 clients..."`
-
-## 3️⃣ Terminal 2: Start Dashboard (10 seconds)
-
+### Client Instructions
+Use server's IP address:
 ```bash
-streamlit run dashboard/app.py
+python client.py --client-id 0 --server-address <SERVER_IP>:8080
 ```
-
-**Browser opens automatically** at `http://localhost:8501`
-
-## 4️⃣ Terminal 3: Start Supplier A (10 seconds)
-
-```bash
-python client.py --client-id 0
-```
-
-**Watch terminal:** Loading data → Training → Sending updates
-
-## 5️⃣ Terminal 4: Start Supplier B (10 seconds)
-
-```bash
-python client.py --client-id 1
-```
-
-## 6️⃣ Watch the Magic! (2 minutes)
-
-**In the dashboard you'll see:**
-- ✅ Progress bar moving
-- ✅ Loss decreasing (model improving!)
-- ✅ Both suppliers contributing
-- ✅ Real-time updates
-
-**In ~2-3 minutes:** Training complete! 🎉
 
 ---
 
-## What Just Happened?
+## ZeroTier Setup (Cross-Network)
 
-1. **Server** coordinated the learning
-2. **2 Suppliers** trained on their local data
-3. **No data** left their machines
-4. **Both got** better models than training alone
-5. **You watched** it happen in real-time!
+### 1. Install ZeroTier
+- **Windows**: Download from https://www.zerotier.com/download/
+- **Mac**: `brew install --cask zerotier-one`
+- **Linux**: `curl -s https://install.zerotier.com | sudo bash`
 
----
+### 2. Create Network
+1. Go to https://my.zerotier.com/
+2. Sign up (free)
+3. Create network → Copy Network ID
 
-## Next Steps
-
-### Add More Suppliers
+### 3. Join Network (All Devices)
 ```bash
-# Terminal 5
-python client.py --client-id 2
+# Windows (ZeroTier GUI)
+Right-click tray icon → Join Network → Enter Network ID
 
-# Terminal 6
-python client.py --client-id 3
+# Mac/Linux
+sudo zerotier-cli join <NETWORK_ID>
 ```
 
-### Longer Training
-Edit `server.py` line 94:
-```python
-config=ServerConfig(num_rounds=10)  # Instead of 5
-```
+### 4. Authorize Devices
+Go to https://my.zerotier.com/ → Check box to authorize each device
 
-### Different Networks
-See `zerotier_setup/setup_guide.md`
+### 5. Get ZeroTier IPs
+```bash
+zerotier-cli listnetworks
+```
+Look for "Managed IP" (e.g., `10.147.17.5`)
+
+### 6. Use ZeroTier IPs
+```bash
+# Server (no change needed)
+python server.py --rounds 5 --min-clients 2
+
+# Clients (use ZeroTier IP)
+python client.py --client-id 0 --server-address 10.147.17.5:8080
+```
 
 ---
 
 ## Troubleshooting
 
-**"Module not found"**
+**Connection Failed**
+- Check firewall allows port 8080
+- Verify same network or ZeroTier IPs
+- Ping test: `ping <SERVER_IP>`
+
+**Port Already in Use**
 ```bash
-# Make sure venv is activated
-pip list | grep flwr  # Should show flwr 1.23.0
+# Kill existing process
+taskkill /F /IM python.exe     # Windows
+pkill python                   # Mac/Linux
 ```
 
-**"Data file not found"**
+**Dependencies Missing**
 ```bash
-# Check you're in project root
-ls federated_data/hybrid/client_0.csv  # Should exist
-```
-
-**"Port 8080 already in use"**
-```bash
-# Kill previous server
-# Windows: taskkill /F /IM python.exe
-# Mac/Linux: pkill python
-```
-
-**"Clients won't connect"**
-```bash
-# Make sure server started first
-# Check server terminal shows "waiting for clients"
+pip install -r requirements-venv.txt
 ```
 
 ---
 
-## Demo for Hackathon
-
-Follow `DEMO_SCRIPT.md` for full presentation walkthrough!
-
----
-
-**That's it! You're running federated learning!** 🚀
-
+## Expected Runtime
+- **5 rounds** × **2-3 min/round** = **10-15 minutes**
+- Training loss should decrease over rounds
