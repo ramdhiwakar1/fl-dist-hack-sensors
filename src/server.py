@@ -22,7 +22,7 @@ class ProgressTrackingFedAvg(FedAvg):
         super().__init__(*args, **kwargs)
         self.metrics_history = []
         self.current_round = 0
-        self.metrics_file = Path("dashboard/training_metrics.json")
+        self.metrics_file = Path(__file__).parent.parent / "dashboard/training_metrics.json"
         self.metrics_file.parent.mkdir(exist_ok=True)
     
     def aggregate_fit(self, server_round, results, failures):

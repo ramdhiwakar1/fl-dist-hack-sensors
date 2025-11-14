@@ -45,8 +45,8 @@ def load_data(client_id: int, batch_size: int = 32):
     Simplified for faster execution.
     """
     
-    # Path to client data
-    data_path = Path(f"federated_data/hybrid/client_{client_id}.csv")
+    # Path to client data (adjusted for src/ directory)
+    data_path = Path(__file__).parent.parent / f"federated_data/hybrid/client_{client_id}.csv"
     
     if not data_path.exists():
         raise FileNotFoundError(f"Data file not found: {data_path}")
