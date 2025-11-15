@@ -4,7 +4,7 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from flower_bloomer.task import Net, load_data
+from flower_bloomer.task import Net, load_data, load_client_dataset
 from flower_bloomer.task import test as test_fn
 from flower_bloomer.task import train as train_fn
 
@@ -23,9 +23,11 @@ def train(msg: Message, context: Context):
     model.to(device)
 
     # Load the data
-    partition_id = context.node_config["partition-id"]
-    num_partitions = context.node_config["num-partitions"]
-    trainloader, _ = load_data(partition_id, num_partitions)
+    # partition_id = context.node_config["partition-id"]
+    # num_partitions = context.node_config["num-partitions"]
+    # trainloader, _ = load_data(partition_id, num_partitions)
+    client_id = context.node_config["partition-id"]
+    trainloader, _ = load_client_dataset(client_id)
 
     # Call the training function
     train_loss = train_fn(
@@ -58,9 +60,11 @@ def evaluate(msg: Message, context: Context):
     model.to(device)
 
     # Load the data
-    partition_id = context.node_config["partition-id"]
-    num_partitions = context.node_config["num-partitions"]
-    _, valloader = load_data(partition_id, num_partitions)
+    # partition_id = context.node_config["partition-id"]
+    # num_partitions = context.node_config["num-partitions"]
+    # _, valloader = load_data(partition_id, num_partitions)
+    client_id = context.node_config["partition-id"]
+    _, valloader = load_client_dataset(client_id)
 
     # Call the evaluation function
     eval_loss, eval_acc = test_fn(

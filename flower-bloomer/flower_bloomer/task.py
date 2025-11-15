@@ -5,8 +5,19 @@ import torch.nn as nn
 import torch.nn.functional as F
 from flwr_datasets import FederatedDataset
 from flwr_datasets.partitioner import IidPartitioner
+from flwr_datasets.partitioner import DirichletPartitioner
 from torch.utils.data import DataLoader
 from torchvision.transforms import Compose, Normalize, ToTensor
+
+
+from torch.utils.data import DataLoader, TensorDataset
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import numpy as np
+import pandas as pd
+
+# from datasets import load_dataset
+# from flwr_datasets.partitioner import ChosenPartitioner
 
 
 class Net(nn.Module):
@@ -42,7 +53,7 @@ def apply_transforms(batch):
 
 
 def load_data(partition_id: int, num_partitions: int):
-    """Load partition CIFAR10 data."""
+    """Load partition sensors data."""
     # Only initialize `FederatedDataset` once
     global fds
     if fds is None:
@@ -52,6 +63,16 @@ def load_data(partition_id: int, num_partitions: int):
             partitioners={"train": partitioner},
         )
     partition = fds.load_partition(partition_id)
+
+    # Loading sensor data
+    # Single file
+    # data_files = r'fl-dist-hack-sensors\data\sensor.csv'
+    # dataset = load_dataset("csv", data_files=data_files)
+
+    # partitioner = DirichletPartitioner(num_partitions=num_partitions, partition_by="", alpha=1.0)
+    # partitioner.dataset = dataset
+    # partition = partitioner.load_partition(partition_id=0)
+
     # Divide data on each node: 80% train, 20% test
     partition_train_test = partition.train_test_split(test_size=0.2, seed=42)
     # Construct dataloaders
@@ -60,6 +81,37 @@ def load_data(partition_id: int, num_partitions: int):
     testloader = DataLoader(partition_train_test["test"], batch_size=32)
     return trainloader, testloader
 
+def load_client_dataset(client_id: int):
+    """Load one client's dataset from disk."""
+
+    # Load the client's CSV
+    df = pd.read_csv(f"federated_data/hybrid/client_{client_id}.csv")
+
+    # Select sensor columns
+    sensor_cols = [c for c in df.columns if c.startswith("sensor_")]
+
+    X = df[sensor_cols].fillna(df[sensor_cols].mean()).values
+
+    # Normalize
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
+    # For CNN autoencoder, create sequences
+    seq_len = 10
+    seqs = [X[i:i+seq_len] for i in range(len(X)-seq_len)]
+    seqs = np.array(seqs)
+
+    # Train/test split
+    X_train, X_test = train_test_split(seqs, test_size=0.2, shuffle=True)
+
+    # Convert to PyTorch [batch, channels, length]
+    X_train = torch.FloatTensor(X_train).permute(0, 2, 1)
+    X_test = torch.FloatTensor(X_test).permute(0, 2, 1)
+
+    train_loader = DataLoader(TensorDataset(X_train, X_train), batch_size=32, shuffle=True)
+    val_loader = DataLoader(TensorDataset(X_test, X_test), batch_size=32, shuffle=False)
+
+    return train_loader, val_loader
 
 def train(net, trainloader, epochs, lr, device):
     """Train the model on the training set."""
