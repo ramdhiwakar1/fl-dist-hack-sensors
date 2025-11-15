@@ -4,20 +4,35 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
-from flower_bloomer.task import Net, load_data, load_client_dataset
+from flower_bloomer.task import load_data, load_client_dataset, FlexibleTimeSeriesNet
 from flower_bloomer.task import test as test_fn
 from flower_bloomer.task import train as train_fn
 
 # Flower ClientApp
 app = ClientApp()
 
+SEQ_LENGTH = 100
+NUM_CLASSES = 10
+
+client_id = context.node_config["partition-id"]
+df = pd.read_csv(f"flower_bloomer/hybrid/client_{client_id}.csv")
+
+# Keep only numeric columns
+numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+
+# Remove unwanted columns: index, timestamp, label, or any other non-feature
+for col in ['Unnamed: 0', 'timestamp', 'machine_status']:
+    if col in numeric_cols:
+        numeric_cols.remove(col)
+
+NUM_CHANNELS = len(numeric_cols)
 
 @app.train()
 def train(msg: Message, context: Context):
     """Train the model on local data."""
 
     # Load the model and initialize it with the received weights
-    model = Net()
+    model = FlexibleTimeSeriesNet(NUM_CHANNELS, SEQ_LENGTH, NUM_CLASSES)
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)
@@ -54,7 +69,7 @@ def evaluate(msg: Message, context: Context):
     """Evaluate the model on local data."""
 
     # Load the model and initialize it with the received weights
-    model = Net()
+    model = FlexibleTimeSeriesNet(NUM_CHANNELS, SEQ_LENGTH, NUM_CLASSES)
     model.load_state_dict(msg.content["arrays"].to_torch_state_dict())
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     model.to(device)

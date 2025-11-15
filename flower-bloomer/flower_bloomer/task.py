@@ -41,6 +41,32 @@ class Net(nn.Module):
         return self.fc3(x)
 
 
+class FlexibleTimeSeriesNet(nn.Module):
+    def __init__(self, num_channels, seq_length, num_classes):
+        super().__init__()
+        self.conv1 = nn.Conv1d(num_channels, 16, kernel_size=3, padding=1)
+        self.conv2 = nn.Conv1d(16, 32, kernel_size=3, padding=1)
+        self.pool = nn.MaxPool1d(2)
+
+        # Temporary dummy input to infer flatten size
+        with torch.no_grad():
+            dummy = torch.zeros(1, num_channels, seq_length)
+            x = self.pool(F.relu(self.conv1(dummy)))
+            x = self.pool(F.relu(self.conv2(x)))
+            self._flattened_size = x.numel()
+
+        self.fc1 = nn.Linear(self._flattened_size, 128)
+        self.fc2 = nn.Linear(128, num_classes)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        x = self.pool(x)
+        x = F.relu(self.conv2(x))
+        x = self.pool(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.fc1(x))
+        return self.fc2(x)
+
 fds = None  # Cache FederatedDataset
 
 pytorch_transforms = Compose([ToTensor(), Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
@@ -85,7 +111,7 @@ def load_client_dataset(client_id: int):
     """Load one client's dataset from disk."""
 
     # Load the client's CSV
-    df = pd.read_csv(f"federated_data/hybrid/client_{client_id}.csv")
+    df = pd.read_csv(rf"C:\Users\sw\Documents\Cold_AI_Hackathon\fl-dist-hack-sensors\flower-bloomer\flower_bloomer\hybrid\client_{client_id}.csv")
 
     # Select sensor columns
     sensor_cols = [c for c in df.columns if c.startswith("sensor_")]
@@ -113,38 +139,72 @@ def load_client_dataset(client_id: int):
 
     return train_loader, val_loader
 
+# def train(net, trainloader, epochs, lr, device):
+#     """Train the model on the training set."""
+#     net.to(device)  # move model to GPU if available
+#     criterion = torch.nn.CrossEntropyLoss().to(device)
+#     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
+#     net.train()
+#     running_loss = 0.0
+#     for _ in range(epochs):
+#         for batch in trainloader:
+#             images = batch["img"].to(device)
+#             labels = batch["label"].to(device)
+#             optimizer.zero_grad()
+#             loss = criterion(net(images), labels)
+#             loss.backward()
+#             optimizer.step()
+#             running_loss += loss.item()
+#     avg_trainloss = running_loss / len(trainloader)
+#     return avg_trainloss
+
+
+# def test(net, testloader, device):
+#     """Validate the model on the test set."""
+#     net.to(device)
+#     criterion = torch.nn.CrossEntropyLoss()
+#     correct, loss = 0, 0.0
+#     with torch.no_grad():
+#         for batch in testloader:
+#             images = batch["img"].to(device)
+#             labels = batch["label"].to(device)
+#             outputs = net(images)
+#             loss += criterion(outputs, labels).item()
+#             correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
+#     accuracy = correct / len(testloader.dataset)
+#     loss = loss / len(testloader)
+#     return loss, accuracy
+
 def train(net, trainloader, epochs, lr, device):
-    """Train the model on the training set."""
-    net.to(device)  # move model to GPU if available
-    criterion = torch.nn.CrossEntropyLoss().to(device)
+    net.to(device)
+    criterion = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(net.parameters(), lr=lr)
     net.train()
     running_loss = 0.0
     for _ in range(epochs):
-        for batch in trainloader:
-            images = batch["img"].to(device)
-            labels = batch["label"].to(device)
+        for data, labels in trainloader:
+            data = data.to(device)
+            labels = labels.to(device)
             optimizer.zero_grad()
-            loss = criterion(net(images), labels)
+            loss = criterion(net(data), labels)
             loss.backward()
             optimizer.step()
             running_loss += loss.item()
-    avg_trainloss = running_loss / len(trainloader)
-    return avg_trainloss
+    avg_train_loss = running_loss / len(trainloader)
+    return avg_train_loss
 
 
 def test(net, testloader, device):
-    """Validate the model on the test set."""
     net.to(device)
     criterion = torch.nn.CrossEntropyLoss()
     correct, loss = 0, 0.0
     with torch.no_grad():
-        for batch in testloader:
-            images = batch["img"].to(device)
-            labels = batch["label"].to(device)
-            outputs = net(images)
+        for data, labels in testloader:
+            data = data.to(device)
+            labels = labels.to(device)
+            outputs = net(data)
             loss += criterion(outputs, labels).item()
-            correct += (torch.max(outputs.data, 1)[1] == labels).sum().item()
+            correct += (torch.max(outputs, 1)[1] == labels).sum().item()
     accuracy = correct / len(testloader.dataset)
     loss = loss / len(testloader)
     return loss, accuracy

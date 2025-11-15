@@ -5,7 +5,7 @@ from flwr.app import ArrayRecord, ConfigRecord, Context
 from flwr.serverapp import Grid, ServerApp
 from flwr.serverapp.strategy import FedAvg
 
-from flower_bloomer.task import Net
+from flower_bloomer.task import Net, FlexibleTimeSeriesNet
 
 # Create ServerApp
 app = ServerApp()
@@ -22,7 +22,7 @@ def main(grid: Grid, context: Context) -> None:
     lr: float = context.run_config["lr"]
 
     # Load global model
-    global_model = Net()
+    global_model = FlexibleTimeSeriesNet(num_channels=52, seq_length=100, num_classes=10)
     arrays = ArrayRecord(global_model.state_dict())
 
     # Initialize FedAvg strategy
