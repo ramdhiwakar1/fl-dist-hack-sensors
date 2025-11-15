@@ -17,7 +17,8 @@ def main(grid: Grid, context: Context) -> None:
 
     # Read run config
     fraction_train: float = context.run_config["fraction-train"]
-    num_rounds: int = context.run_config["num-server-rounds"]
+    # num_rounds: int = context.run_config["num-server-rounds"]
+    num_rounds: int = 1
     lr: float = context.run_config["lr"]
 
     # Load global model
